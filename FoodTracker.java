@@ -1,26 +1,32 @@
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class FoodTrackerApp extends JFrame {
     private DefaultTableModel tableModel;
     private JTable foodTable;
-    private JTextField nameField, caloriesField;
+    private JTextField nameField, caloriesField, goalCaloriesField;
     private JComboBox<String> categoryBox, filterBox;
-    private JLabel totalCaloriesLabel;
+    private JLabel totalCaloriesLabel, goalLabel;
+    private JProgressBar progressBar;
+    private int goalCalories = 0;
 
     public FoodTrackerApp() {
-        setTitle("Food Tracker ");
-        setSize(600, 400);
+        setTitle("Food Tracker 🍽️");
+        setSize(650, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        JPanel inputPanel = new JPanel(new GridLayout(2, 4, 10, 5));
+        // Input panel
+        JPanel inputPanel = new JPanel(new GridLayout(3, 4, 10, 5));
         nameField = new JTextField();
         caloriesField = new JTextField();
+        goalCaloriesField = new JTextField();
         categoryBox = new JComboBox<>(new String[]{"Voće", "Povrće", "Slatkiši", "Meso", "Ostalo"});
         JButton addButton = new JButton("Dodaj");
+        JButton setGoalButton = new JButton("Postavi cilj");
 
         inputPanel.add(new JLabel("Hrana:"));
         inputPanel.add(nameField);
@@ -31,36 +37,57 @@ public class FoodTrackerApp extends JFrame {
         inputPanel.add(new JLabel(""));
         inputPanel.add(addButton);
 
+        inputPanel.add(new JLabel("Ciljane kalorije:"));
+        inputPanel.add(goalCaloriesField);
+        inputPanel.add(new JLabel(""));
+        inputPanel.add(setGoalButton);
+
         add(inputPanel, BorderLayout.NORTH);
 
-
+        // Table
         tableModel = new DefaultTableModel(new String[]{"Hrana", "Kalorije", "Kategorija"}, 0);
         foodTable = new JTable(tableModel);
-
         foodTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(new JTextField()));
         add(new JScrollPane(foodTable), BorderLayout.CENTER);
 
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Bottom panel
+        JPanel bottomPanel = new JPanel(new GridLayout(3, 1));
+
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterBox = new JComboBox<>(new String[]{"Sve", "Voće", "Povrće", "Slatkiši", "Meso", "Ostalo"});
         JButton filterButton = new JButton("Filtriraj");
         JButton resetFilterButton = new JButton("Resetiraj");
         JButton deleteButton = new JButton("Obriši odabrano");
         totalCaloriesLabel = new JLabel("Ukupno kalorija: 0");
 
-        bottomPanel.add(new JLabel("Filter:"));
-        bottomPanel.add(filterBox);
-        bottomPanel.add(filterButton);
-        bottomPanel.add(resetFilterButton);
-        bottomPanel.add(deleteButton);
-        bottomPanel.add(Box.createHorizontalStrut(20));
-        bottomPanel.add(totalCaloriesLabel);
+        filterPanel.add(new JLabel("Filter:"));
+        filterPanel.add(filterBox);
+        filterPanel.add(filterButton);
+        filterPanel.add(resetFilterButton);
+        filterPanel.add(deleteButton);
+        filterPanel.add(Box.createHorizontalStrut(20));
+        filterPanel.add(totalCaloriesLabel);
+
+        // Progress bar
+        progressBar = new JProgressBar(0, 100);
+        progressBar.setStringPainted(true);
+        goalLabel = new JLabel("Cilj: 0 kalorija");
+
+        JPanel progressPanel = new JPanel(new BorderLayout());
+        progressPanel.add(goalLabel, BorderLayout.WEST);
+        progressPanel.add(progressBar, BorderLayout.CENTER);
+
+        bottomPanel.add(filterPanel);
+        bottomPanel.add(progressPanel);
 
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // Event listeners
         addButton.addActionListener(e -> addFood());
         deleteButton.addActionListener(e -> deleteSelectedRow());
         filterButton.addActionListener(e -> applyFilter());
         resetFilterButton.addActionListener(e -> resetFilter());
+        setGoalButton.addActionListener(e -> setGoalCalories());
 
         foodTable.getModel().addTableModelListener(e -> updateTotalCalories());
     }
@@ -124,6 +151,21 @@ public class FoodTrackerApp extends JFrame {
         applyFilter();
     }
 
+    private void setGoalCalories() {
+        try {
+            int value = Integer.parseInt(goalCaloriesField.getText().trim());
+            if (value <= 0) {
+                JOptionPane.showMessageDialog(this, "Cilj mora biti pozitivan broj.");
+                return;
+            }
+            goalCalories = value;
+            goalLabel.setText("Cilj: " + goalCalories + " kalorija");
+            updateTotalCalories();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Unesite ispravnu vrijednost cilja.");
+        }
+    }
+
     private void updateTotalCalories() {
         int total = 0;
         for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -133,7 +175,24 @@ public class FoodTrackerApp extends JFrame {
                 // ignore
             }
         }
+
         totalCaloriesLabel.setText("Ukupno kalorija: " + total);
+
+        if (goalCalories > 0) {
+            int percent = (int) ((total / (double) goalCalories) * 100);
+            progressBar.setValue(Math.min(percent, 100));
+            progressBar.setString(total + " / " + goalCalories + " kcal");
+
+            if (total > goalCalories) {
+                progressBar.setForeground(Color.RED);
+            } else {
+                progressBar.setForeground(Color.GREEN.darker());
+            }
+        } else {
+            progressBar.setValue(0);
+            progressBar.setString("Postavi cilj kalorija");
+            progressBar.setForeground(Color.GRAY);
+        }
     }
 
     public static void main(String[] args) {
