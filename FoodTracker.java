@@ -13,7 +13,7 @@ public class FoodTrackerApp extends JFrame {
     private int goalCalories = 0;
 
     public FoodTrackerApp() {
-        setTitle("Food Tracker 🍽️");
+        setTitle("Food Tracker");
         setSize(650, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -24,7 +24,27 @@ public class FoodTrackerApp extends JFrame {
         nameField = new JTextField();
         caloriesField = new JTextField();
         goalCaloriesField = new JTextField();
-        categoryBox = new JComboBox<>(new String[]{"Voće", "Povrće", "Slatkiši", "Meso", "Ostalo"});
+        categoryBox = new JComboBox<>(new String[]{
+                "Voće",
+                "Povrće",
+                "Slatkiši",
+                "Meso",
+                "Riba",
+                "Tjestenina",
+                "Ostalo",
+                "Mliječni proizvodi",
+                "Piće",
+                "Zamrznuto",
+                "Grickalice",
+                "Kruh i pekarski proizvodi",
+                "Žitarice i pahuljice",
+                "Konzervirana hrana",
+                "Začini i umaci",
+                "Ulje i ocat",
+                "Dodaci prehrani",
+                "Dječja hrana"
+        });
+
         JButton addButton = new JButton("Dodaj");
         JButton setGoalButton = new JButton("Postavi cilj");
 
