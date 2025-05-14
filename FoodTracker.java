@@ -2,6 +2,8 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
+
 
 public class FoodTrackerApp extends JFrame {
     private DefaultTableModel tableModel;
@@ -72,6 +74,11 @@ public class FoodTrackerApp extends JFrame {
 
         // Bottom panel
         JPanel bottomPanel = new JPanel(new GridLayout(3, 1));
+
+        PieChartPanel pieChartPanel = new PieChartPanel();
+        pieChartPanel.setPreferredSize(new Dimension(250, 350));
+        add(pieChartPanel, BorderLayout.EAST);
+
 
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterBox = new JComboBox<>(new String[]{"Sve", "Voće", "Povrće", "Slatkiši", "Meso", "Ostalo"});
@@ -194,6 +201,8 @@ public class FoodTrackerApp extends JFrame {
             } catch (NumberFormatException e) {
                 // ignore
             }
+            repaint(); // refresh pie chart
+
         }
 
         totalCaloriesLabel.setText("Ukupno kalorija: " + total);
@@ -212,6 +221,56 @@ public class FoodTrackerApp extends JFrame {
             progressBar.setValue(0);
             progressBar.setString("Postavi cilj kalorija");
             progressBar.setForeground(Color.GRAY);
+        }
+    }
+
+    private class PieChartPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Map<String, Integer> categoryCalories = new HashMap<>();
+            int total = 0;
+
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                String category = tableModel.getValueAt(i, 2).toString();
+                int cal = Integer.parseInt(tableModel.getValueAt(i, 1).toString());
+
+                categoryCalories.put(category, categoryCalories.getOrDefault(category, 0) + cal);
+                total += cal;
+            }
+
+            if (total == 0) return;
+
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int x = 20, y = 20, diameter = 200;
+            int startAngle = 0;
+            Random rand = new Random();
+            Map<String, Color> colorMap = new HashMap<>();
+
+            for (Map.Entry<String, Integer> entry : categoryCalories.entrySet()) {
+                String category = entry.getKey();
+                int value = entry.getValue();
+
+                int angle = (int) Math.round(360.0 * value / total);
+                Color color = colorMap.computeIfAbsent(category, k -> new Color(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255)));
+
+                g2d.setColor(color);
+                g2d.fillArc(x, y, diameter, diameter, startAngle, angle);
+                startAngle += angle;
+            }
+
+            // Draw legend
+            int legendY = y + diameter + 20;
+            for (Map.Entry<String, Color> entry : colorMap.entrySet()) {
+                g2d.setColor(entry.getValue());
+                g2d.fillRect(x, legendY, 20, 20);
+                g2d.setColor(Color.BLACK);
+                g2d.drawString(entry.getKey(), x + 30, legendY + 15);
+                legendY += 25;
+            }
         }
     }
 
